@@ -216,62 +216,62 @@ $byNumber = fn(string $nr) => Course::findOneBySQL('VeranstaltungsNummer = ?', [
 
 echo "== Teilnehmende und Mindestanzahl ==\n";
 $five = new AvailabilityCounter($five, $current);
-check('genau 5 Teilnehmende: kein Plan', false, $five->hasEnoughParticipants());
+check('Zielveranstaltung mit genau 5 Teilnehmenden: kein Plan', false, $five->hasEnoughParticipants());
 $wise = new AvailabilityCounter($target, $current);
-check('Zielveranstaltung: 6 gezählt (5 autor + 1 user, Tutor:innen nicht)', 6, $wise->getParticipantCount());
-check('6 Teilnehmende: Plan verfügbar', true, $wise->hasEnoughParticipants());
+check('AVS-100: 6 Teilnehmende (5 autor + 1 user, Tutor:innen nicht)', 6, $wise->getParticipantCount());
+check('6 Teilnehmende: Plan wird angezeigt', true, $wise->hasEnoughParticipants());
 
 echo "\n== Aktuelles Semester ({$current->name}), nur regelmäßige Termine ==\n";
 $grid = $wise->buildGrid();
 $courses = $wise->getCourses();
-check('unbegrenzte Veranstaltung zählt (Mo 8)', 3, $grid->count(MON, 8));
-check('unbegrenzte Veranstaltung zählt (Mo 9)', 3, $grid->count(MON, 9));
-check('mehrsemestrige Veranstaltung zählt (Di 8)', 4, $grid->count(TUE, 8));
-check('Veranstaltung nur im Vorsemester zählt nicht (Mi 8)', 0, $grid->count(WED, 8));
-check('14-tägliche Veranstaltung zählt (Do 8)', 3, $grid->count(THU, 8));
-check('14-tägliche Veranstaltung ist markiert', true, $courses[$byNumber(PREFIX . '04')]['biweekly']);
-check('wöchentliche Veranstaltung ist nicht markiert', false, $courses[$byNumber(PREFIX . '01')]['biweekly']);
-check('Tutorin in anderer Veranstaltung zählt als belegt (Fr 8)', 3, $grid->count(FRI, 8));
-check('ausgefallene Termine zählen nicht (Mo 12)', 0, $grid->count(MON, 12));
-check('Leser:in (Status user) zählt (Di 12)', 1, $grid->count(TUE, 12));
-check('Überlappung zählt Personen einzeln, nicht doppelt (Mi 12)', 3, $grid->count(WED, 12));
+check('unbegrenzte Veranstaltung belegt (Mo 8)', 3, $grid->count(MON, 8));
+check('unbegrenzte Veranstaltung belegt (Mo 9)', 3, $grid->count(MON, 9));
+check('mehrsemestrige Veranstaltung belegt (Di 8)', 4, $grid->count(TUE, 8));
+check('Veranstaltung nur im Vorsemester belegt niemanden (Mi 8)', 0, $grid->count(WED, 8));
+check('14-tägliche Veranstaltung belegt (Do 8)', 3, $grid->count(THU, 8));
+check('14-tägliche Veranstaltung: Zusatz "nicht wöchentlich"', true, $courses[$byNumber(PREFIX . '04')]['biweekly']);
+check('wöchentliche Veranstaltung: kein Zusatz "nicht wöchentlich"', false, $courses[$byNumber(PREFIX . '01')]['biweekly']);
+check('Teilnehmende ist anderswo Tutorin und dort belegt (Fr 8)', 3, $grid->count(FRI, 8));
+check('ausgefallene Termine belegen niemanden (Mo 12)', 0, $grid->count(MON, 12));
+check('Leser:in (user) der Zielveranstaltung ist Teilnehmende und belegt (Di 12)', 1, $grid->count(TUE, 12));
+check('Überlappung: jede belegte Teilnehmende einmal (Mi 12)', 3, $grid->count(WED, 12));
 check('Überlappung, Folgestunde (Mi 13)', 2, $grid->count(WED, 13));
-check('eigene Termine der Zielveranstaltung zählen nicht (Fr 14)', 0, $grid->count(FRI, 14));
-check('Tutor:in der Zielveranstaltung zählt nicht (Sa 10)', 0, $grid->count(SAT, 10));
-check('Einzeltermin ohne Option nicht gezählt (So 10)', 0, $grid->count(SUN, 10));
+check('eigene Termine der Zielveranstaltung belegen niemanden (Fr 14)', 0, $grid->count(FRI, 14));
+check('Tutor:in der Zielveranstaltung ist keine Teilnehmende (Sa 10)', 0, $grid->count(SAT, 10));
+check('Einzeltermin, nur regelmäßige Termine: belegt niemanden (So 10)', 0, $grid->count(SUN, 10));
 check('Termin 12:00-12:30 belegt die Stunde 12 (Do 12)', 2, $grid->count(THU, 12));
 check('Termin 12:00-12:30 belegt nicht die Stunde 13 (Do 13)', 0, $grid->count(THU, 13));
-check('Maximum', 4, $grid->maxCount());
+check('höchste Zahl im Raster', 4, $grid->maxCount());
 
 echo "\n== Datenschutz: Nennung in der Liste (ab " . AvailabilityCounter::MIN_COURSE_COUNT . ") ==\n";
 check(
-    'Veranstaltung mit 3 Teilnehmenden wird genannt (Mo 8)',
+    'andere Veranstaltung mit 3 Teilnehmenden wird genannt (Mo 8)',
     ['named' => [$byNumber(PREFIX . '01') => 3], 'hidden' => 0],
     $grid->visibleCourseCounts(MON, 8, AvailabilityCounter::MIN_COURSE_COUNT)
 );
 check(
-    'Veranstaltung mit 1 Teilnehmenden wird nicht genannt (Di 12)',
+    'andere Veranstaltung mit 1 Teilnehmenden wird nicht genannt (Di 12)',
     ['named' => [], 'hidden' => 1],
     $grid->visibleCourseCounts(TUE, 12, AvailabilityCounter::MIN_COURSE_COUNT)
 );
 check(
-    'zwei Veranstaltungen mit je 2 werden nur gezählt (Mi 12)',
+    'zwei andere Veranstaltungen mit je 2: keine genannt (Mi 12)',
     ['named' => [], 'hidden' => 2],
     $grid->visibleCourseCounts(WED, 12, AvailabilityCounter::MIN_COURSE_COUNT)
 );
 
 echo "\n== Aktuelles Semester mit Einzel- und Blockterminen ==\n";
 $grid = (new AvailabilityCounter($target, $current, true))->buildGrid();
-check('Einzeltermin am Sonntag gezählt (So 10)', 1, $grid->count(SUN, 10));
+check('Einzeltermin, auch Einzeltermine: belegt (So 10)', 1, $grid->count(SUN, 10));
 check('Sonntag wird als belegter Tag erkannt', true, $grid->hasOccupationOn(SUN));
 check('regelmäßige Termine unverändert (Di 8)', 4, $grid->count(TUE, 8));
 
 echo "\n== Vorsemester ({$previous->name}) ==\n";
 $grid = (new AvailabilityCounter($target, $previous))->buildGrid();
-check('Veranstaltung nur im Vorsemester zählt (Mi 8)', 5, $grid->count(WED, 8));
-check('mehrsemestrige Veranstaltung zählt auch hier (Di 8)', 4, $grid->count(TUE, 8));
-check('unbegrenzte Veranstaltung ohne Termine im Vorsemester zählt nicht (Mo 8)', 0, $grid->count(MON, 8));
-check('Veranstaltung nur im aktuellen Semester zählt nicht (Do 8)', 0, $grid->count(THU, 8));
+check('Veranstaltung nur im Vorsemester belegt (Mi 8)', 5, $grid->count(WED, 8));
+check('mehrsemestrige Veranstaltung belegt auch hier (Di 8)', 4, $grid->count(TUE, 8));
+check('unbegrenzte Veranstaltung ohne Termine im Vorsemester belegt niemanden (Mo 8)', 0, $grid->count(MON, 8));
+check('Veranstaltung nur im aktuellen Semester belegt niemanden (Do 8)', 0, $grid->count(THU, 8));
 
 printf("\n%s: %d Fehler\n", $failures ? 'FEHLGESCHLAGEN' : 'OK', $failures);
 printf("Zielveranstaltung AVS-100: cid=%s\n", $target->id);

@@ -2,7 +2,25 @@ Testprotokoll Verfügbarkeitsplan (AvailSchedule) 1.0.0
 =====================================================
 
 Stand: 27.11.2026 · Branch `studip-6` · getestet von Claude Code (automatisiert und im Browser)
-sowie asudau (Browsertest als Autor)
+sowie asudau (Browsertests als Autor und Tutor)
+
+Begriffe
+--------
+
+Das Protokoll verwendet durchgehend diese Begriffe:
+
+* **Zielveranstaltung**: die Veranstaltung, deren Verfügbarkeitsplan angezeigt wird.
+* **Teilnehmende**: Personen mit Status `autor` oder `user` in der Zielveranstaltung. Nur über sie
+  gibt der Plan Auskunft. Tutor:innen und Lehrende der Zielveranstaltung sind keine Teilnehmenden.
+* **andere Veranstaltung**: jede Veranstaltung außer der Zielveranstaltung, in der eine Teilnehmende
+  eingetragen ist, egal mit welchem Status (auch als Tutorin).
+* **belegt**: Eine Teilnehmende ist in einem Stundenslot belegt, wenn sie dort einen Termin in einer
+  anderen Veranstaltung hat. Ein Termin belegt jeden Stundenslot, den er berührt.
+* **Zahl im Raster**: Anzahl der belegten Teilnehmenden in diesem Stundenslot. Jede Person zählt
+  höchstens einmal, auch wenn sie mehrere Termine gleichzeitig hat.
+* **genannt**: Eine andere Veranstaltung erscheint in der Liste unter dem Raster mit ihrem Namen. Das
+  passiert nur, wenn mindestens 3 Teilnehmende sie belegen. Kleinere erscheinen nur als Anzahl
+  („n weitere Veranstaltungen“).
 
 Umgebung
 --------
@@ -19,11 +37,12 @@ Umgebung
 Testdaten
 ---------
 
-* **Hauptdaten** `dev/seed-testdata.php`: AVS-000 (Zielveranstaltung, 15 Studierende) und AVS-001 bis
-  AVS-008 mit sich überschneidenden regelmäßigen Terminen und einem Blockseminar (Fr–So) im WiSe.
-* **Randfälle** `dev/test-edgecases.php`: AVS-100 (Zielveranstaltung) und AVS-101 bis AVS-113 mit
-  eigenen Testpersonen `avs_edge_a` bis `avs_edge_g`, die in keiner anderen Veranstaltung sind. So
-  beeinflussen sich die beiden Datensätze nicht.
+* **Hauptdaten** `dev/seed-testdata.php`: Zielveranstaltung AVS-000 mit 15 Teilnehmenden, dazu die
+  anderen Veranstaltungen AVS-001 bis AVS-008 mit sich überschneidenden regelmäßigen Terminen und
+  einem Blockseminar (Fr–So), alle im WiSe.
+* **Randfälle** `dev/test-edgecases.php`: Zielveranstaltung AVS-100 und die anderen Veranstaltungen
+  AVS-101 bis AVS-113. Die Teilnehmenden sind eigene Testpersonen `avs_edge_a` bis `avs_edge_g`, die
+  sonst nirgends eingetragen sind. So beeinflussen sich die beiden Datensätze nicht.
 
 Zusammenfassung
 ---------------
@@ -41,22 +60,23 @@ Zusammenfassung
 1 Unit-Tests
 ------------
 
-`composer/bin/phpunit -c tests/phpunit.xml` prüft die reine Zähllogik ohne Datenbank.
+`composer/bin/phpunit -c tests/phpunit.xml` prüft die reine Zähllogik ohne Datenbank. Hier gibt es
+noch keine Zielveranstaltung, deshalb ist allgemein von „Personen“ die Rede.
 
-| Fall | Ergebnis |
-|---|---|
-| Leeres Raster zählt 0 | bestanden |
-| Raster umfasst 8 bis 22 Uhr (14 Stundenslots) | bestanden |
-| Minutengenau: 10:15–11:45 belegt 10 und 11 Uhr, nicht 9 und 12 | bestanden |
-| Slotgrenzen exklusiv: 10:00–12:00 belegt nicht 12 Uhr | bestanden |
-| Kurzer Termin 9:00–9:30 belegt 9 Uhr (früher verschluckt) | bestanden |
-| Person in zwei parallelen Veranstaltungen zählt einmal | bestanden |
-| Zwei Termine derselben Veranstaltung in einem Slot zählen einmal | bestanden |
-| Veranstaltungen unter 3 Personen werden nicht genannt, nur gezählt | bestanden |
-| Wochentage getrennt | bestanden |
-| Sonntag als 0 oder 7 | bestanden |
-| Zeiten außerhalb 8–22 Uhr ignoriert | bestanden |
-| Umrechnung `HH:MM[:SS]` in Minuten | bestanden |
+| Fall | Erwartet | Ergebnis |
+|---|---|---|
+| Leeres Raster | alle Zahlen 0 | bestanden |
+| Umfang des Rasters | 14 Stundenslots von 8 bis 22 Uhr | bestanden |
+| Termin 10:15–11:45 | belegt die Slots 10–11 und 11–12 Uhr, nicht 9–10 und 12–13 Uhr | bestanden |
+| Termin 10:00–12:00 | belegt nicht den Slot 12–13 Uhr (Slotgrenzen exklusiv) | bestanden |
+| Termin 9:00–9:30 | belegt den Slot 9–10 Uhr (das alte Plugin hat ihn übersehen) | bestanden |
+| Eine Person in zwei gleichzeitigen Veranstaltungen | Zahl im Raster 1, nicht 2 | bestanden |
+| Zwei Termine derselben Veranstaltung im selben Slot | Zahl im Raster 1 | bestanden |
+| Veranstaltungen mit 3 bzw. 1 Person im Slot | erste wird genannt, zweite nur als Anzahl | bestanden |
+| Termin am Dienstag | belegt nur Dienstag, nicht Montag | bestanden |
+| Sonntag als Wochentag 0 oder 7 gespeichert | beides belegt Sonntag | bestanden |
+| Termine vor 8 oder nach 22 Uhr | belegen nur die Slots innerhalb 8–22 Uhr | bestanden |
+| Umrechnung `HH:MM[:SS]` in Minuten | korrekt | bestanden |
 
 2 Integrationstest Randfälle
 ----------------------------
@@ -65,78 +85,84 @@ Zusammenfassung
 legt die Daten an, rechnet mit dem echten `AvailabilityCounter` und vergleicht mit Sollwerten.
 Zweimal hintereinander ausgeführt: Das Ergebnis ist identisch, es entstehen keine Duplikate.
 
-**Teilnehmendenzahl und Berechtigungsstufen in der Zielveranstaltung**
+**2.1 Wer ist Teilnehmende? (Zielveranstaltung AVS-100)**
 
 | Fall | Erwartet | Ergebnis |
 |---|---|---|
-| Genau 5 Teilnehmende | kein Plan | bestanden |
-| 5 × `autor` + 1 × `user` (Leser:in) + 2 × `tutor` | 6 gezählt, Plan verfügbar | bestanden |
-| Tutor:in der Zielveranstaltung hat andere Termine | zählt nicht | bestanden |
-| Eigene Termine der Zielveranstaltung | zählen nicht | bestanden |
+| Zielveranstaltung mit genau 5 Teilnehmenden | kein Plan, nur Hinweis | bestanden |
+| AVS-100: 5 × `autor`, 1 × `user` (Leser:in), 2 × `tutor` | 6 Teilnehmende, Plan wird angezeigt | bestanden |
+| Tutor:in der Zielveranstaltung hat Sa 10–12 Uhr einen Termin in einer anderen Veranstaltung | ist keine Teilnehmende, Sa 10 Uhr bleibt 0 | bestanden |
+| Leser:in (`user`) der Zielveranstaltung hat Di 12–13 Uhr einen Termin in einer anderen Veranstaltung | ist Teilnehmende und dort belegt, Di 12 Uhr = 1 | bestanden |
+| Termin der Zielveranstaltung selbst (Fr 14–16 Uhr) | belegt niemanden, Fr 14 Uhr = 0 | bestanden |
 
-**Andere Veranstaltungen, aktuelles Semester (WiSe 2026/2027)**
-
-| Fall | Erwartet | Ergebnis |
-|---|---|---|
-| Unbegrenzte Veranstaltung (ohne Semesterzuordnung) | zählt | bestanden |
-| Mehrsemestrige Veranstaltung (SoSe bis WiSe) | zählt | bestanden |
-| Veranstaltung nur im Vorsemester | zählt nicht | bestanden |
-| 14-täglicher Termin | zählt, als „nicht wöchentlich“ markiert | bestanden |
-| Wöchentlicher Termin | nicht markiert | bestanden |
-| Teilnehmende ist in anderer Veranstaltung **Tutorin** | zählt als belegt | bestanden |
-| Teilnehmende ist in anderer Veranstaltung **Leser:in** (`user`) | zählt als belegt | bestanden |
-| Alle Termine eines Turnus ausgefallen (`cancelDate`) | zählt nicht | bestanden |
-| Zwei überlappende Veranstaltungen (12:00–13:00 und 12:30–13:30), 3 Personen, eine davon in beiden | 3 (nicht 4), Folgestunde 2 | bestanden |
-| Termin 12:00–12:30 | belegt 12 Uhr, nicht 13 Uhr | bestanden |
-| Einzeltermin am Sonntag, Option aus | zählt nicht | bestanden |
-| Einzeltermin am Sonntag, Option an | zählt, Sonntag wird angezeigt | bestanden |
-| Option an ändert regelmäßige Termine nicht | unverändert | bestanden |
-
-**Vorsemester (SoSe 2026)**
+**2.2 Welche Termine anderer Veranstaltungen belegen? (aktuelles Semester WiSe 2026/2027, nur regelmäßige Termine)**
 
 | Fall | Erwartet | Ergebnis |
 |---|---|---|
-| Veranstaltung nur im Vorsemester | zählt | bestanden |
-| Mehrsemestrige Veranstaltung | zählt auch hier | bestanden |
-| Unbegrenzte Veranstaltung, deren Termine erst im WiSe beginnen | zählt nicht | bestanden |
-| Veranstaltung nur im aktuellen Semester | zählt nicht | bestanden |
+| Unbegrenzte Veranstaltung (ohne Semesterzuordnung), Mo 8–10 Uhr, 3 Teilnehmende | Mo 8 und 9 Uhr = 3 | bestanden |
+| Mehrsemestrige Veranstaltung (SoSe bis WiSe), Di 8–10 Uhr, 4 Teilnehmende | Di 8 Uhr = 4 | bestanden |
+| Veranstaltung nur im Vorsemester, Mi 8–10 Uhr | belegt im WiSe niemanden, Mi 8 Uhr = 0 | bestanden |
+| 14-täglicher Termin, Do 8–10 Uhr, 3 Teilnehmende | Do 8 Uhr = 3; in der Liste mit Zusatz „nicht wöchentlich“ | bestanden |
+| Wöchentlicher Termin (Gegenprobe zur Zeile davor) | in der Liste **ohne** Zusatz „nicht wöchentlich“ | bestanden |
+| Teilnehmende ist in der anderen Veranstaltung Tutorin (Fr 8–10 Uhr, mit 2 weiteren Teilnehmenden) | sie ist belegt, Fr 8 Uhr = 3 | bestanden |
+| Alle Termine eines Turnus ausgefallen (Mo 12–14 Uhr) | belegen niemanden, Mo 12 Uhr = 0 | bestanden |
+| Zwei überlappende Veranstaltungen 12:00–13:00 und 12:30–13:30 am Mi, 3 Teilnehmende, eine davon in beiden | Mi 12 Uhr = 3 (nicht 4), Mi 13 Uhr = 2 | bestanden |
+| Termin Do 12:00–12:30, 2 Teilnehmende | belegt den Slot 12–13 Uhr (= 2), nicht 13–14 Uhr (= 0) | bestanden |
+| Höchste Zahl im Raster | 4 | bestanden |
 
-**Datenschutz: Nennung in der Liste (ab 3 Personen)**
+**2.3 Einzel- und Blocktermine**
 
 | Fall | Erwartet | Ergebnis |
 |---|---|---|
-| Veranstaltung mit 3 Teilnehmenden | wird genannt | bestanden |
-| Veranstaltung mit 1 Teilnehmenden | nicht genannt, als „1 weitere Veranstaltung“ gezählt | bestanden |
-| Zwei Veranstaltungen mit je 2 | nicht genannt, als „2 weitere“ gezählt | bestanden |
+| Einzeltermin So 10–12 Uhr, Ansicht „Nur regelmäßige Termine“ | belegt niemanden, So 10 Uhr = 0 | bestanden |
+| Derselbe Einzeltermin, Ansicht „Auch Einzel- und Blocktermine“ | So 10 Uhr = 1, Sonntag erscheint im Raster | bestanden |
+| Ansicht „Auch Einzel- und Blocktermine“, regelmäßige Termine | unverändert, Di 8 Uhr weiterhin 4 | bestanden |
+
+**2.4 Vorsemester (SoSe 2026 ausgewählt)**
+
+| Fall | Erwartet | Ergebnis |
+|---|---|---|
+| Veranstaltung nur im Vorsemester, Mi 8–10 Uhr, 5 Teilnehmende | Mi 8 Uhr = 5 | bestanden |
+| Mehrsemestrige Veranstaltung | belegt auch hier, Di 8 Uhr = 4 | bestanden |
+| Unbegrenzte Veranstaltung, deren Termine erst im WiSe beginnen | belegt im SoSe niemanden, Mo 8 Uhr = 0 | bestanden |
+| Veranstaltung nur im aktuellen Semester (14-täglich, Do) | belegt im SoSe niemanden, Do 8 Uhr = 0 | bestanden |
+
+**2.5 Datenschutz: Welche anderen Veranstaltungen werden genannt?**
+
+| Fall | Erwartet | Ergebnis |
+|---|---|---|
+| Mo 8 Uhr: eine andere Veranstaltung mit 3 Teilnehmenden | wird genannt: „AVS-101 AVS unbegrenzt (3)“ | bestanden |
+| Di 12 Uhr: eine andere Veranstaltung mit 1 Teilnehmenden | nicht genannt, nur „1 weitere Veranstaltung …“ | bestanden |
+| Mi 12 Uhr: zwei andere Veranstaltungen mit je 2 Teilnehmenden | keine genannt, nur „2 weitere Veranstaltungen …“ | bestanden |
 
 3 Gegenprobe Hauptdaten
 -----------------------
 
-Zellen des Plans für AVS-000 per unabhängiger SQL-Abfrage nachgezählt:
+Zahlen im Raster für AVS-000 per unabhängiger SQL-Abfrage nachgezählt:
 
-| Zelle | Plugin | SQL | Altes Verfahren (Summe) |
+| Stundenslot | Plugin | SQL | Altes Verfahren |
 |---|---|---|---|
-| Mo 10 Uhr, nur regelmäßige Termine | 9 | 9 | 12 |
-| Fr 10 Uhr, mit Einzelterminen | 10 | 10 | – |
+| Mo 10–11 Uhr, nur regelmäßige Termine | 9 | 9 | 12 |
+| Fr 10–11 Uhr, auch Einzel- und Blocktermine | 10 | 10 | – |
 
-Die Abweichung zum alten Verfahren ist beabsichtigt: Wer in zwei parallelen Veranstaltungen ist, zählt
-jetzt einmal.
+Das alte Verfahren hat die Teilnehmenden pro anderer Veranstaltung addiert. Wer zwei gleichzeitige
+Termine hatte, kam doppelt vor. Jetzt zählt jede belegte Teilnehmende einmal, deshalb 9 statt 12.
 
 4 Browsertests
 --------------
 
-| Rolle / Fall | Prüfung | Ergebnis |
+| Rolle / Fall | Erwartet | Ergebnis |
 |---|---|---|
-| Lehrende (`test_dozent`) in AVS-000 | Eintrag „Verfügbarkeit“ unter Teilnehmende, Raster mit Zahlen und Prozent wie in der Textausgabe | bestanden |
-| Lehrende, Ansicht „Auch Einzel- und Blocktermine“ | Sa/So erscheinen, Blockseminar mit 6 Personen | bestanden |
-| Lehrende, Liste | Mi 18 Uhr (2 Personen): Veranstaltung nicht genannt | bestanden |
-| Lehrende, Semesterwahl SoSe 2026 bei M0897 | Überschneidung Mo 9–11 mit 12 Personen (100 %) | bestanden |
-| Lehrende, Veranstaltung mit 5 Teilnehmenden (AVS-005) | Hinweis statt Plan | bestanden |
-| Lehrende, Veranstaltung ohne eigene Rechte | „Zugriff verweigert“ | bestanden |
-| Farbskala | Stylesheet geladen, Abstufung weiß → dunkel nach Auslastung, schwarze Schrift (Kontrast ca. 9:1) | bestanden (per DOM geprüft, Screenshot nicht möglich) |
-| Autor (Studierende) | kein Eintrag „Verfügbarkeit“, kein Zugriff | bestanden (manuell durch asudau) |
-| Tutor (`test_tutor`) in AVS-100 | Eintrag sichtbar, Plan wird angezeigt, Zahlen wie im Integrationstest (z. B. Di 8 Uhr 4 (67 %), Mi 12 Uhr 3 (50 %) ohne Veranstaltungsnamen) | bestanden (manuell durch asudau) |
-| Nicht eingeschriebene Person (`test_tutor` in AVS-000) | Veranstaltung taucht nicht auf; direkt aufgerufene URLs der Plugin-Seite und der Teilnehmerseite liefern „Zugriff verweigert“ | bestanden (automatisiert und manuell durch asudau) |
+| Lehrende (`test_dozent`) in AVS-000 | Eintrag „Verfügbarkeit“ unter Teilnehmende; Raster mit denselben Zahlen und Prozentwerten wie die Textausgabe von `dump-plan.php` | bestanden |
+| Lehrende, Ansicht „Auch Einzel- und Blocktermine“ | Sa und So erscheinen; durch das Blockseminar 6 belegte Teilnehmende | bestanden |
+| Lehrende, Liste bei Mi 18 Uhr (2 belegte Teilnehmende) | die andere Veranstaltung wird nicht genannt | bestanden |
+| Lehrende, Semesterwahl SoSe 2026 in M0897 | Mo 9–11 Uhr alle 12 Teilnehmenden belegt (100 %) | bestanden |
+| Lehrende, Zielveranstaltung mit 5 Teilnehmenden (AVS-005) | Hinweis statt Plan | bestanden |
+| Lehrende, Veranstaltung, in der sie keine Rechte hat | „Zugriff verweigert“ | bestanden |
+| Farbskala | Stylesheet geladen; Stundenslots mit mehr belegten Teilnehmenden sind dunkler; schwarze Schrift (Kontrast ca. 9:1) | bestanden (per DOM geprüft, Screenshot nicht möglich) |
+| Autor (Studierende) | kein Eintrag „Verfügbarkeit“, kein Zugriff auf die Seite | bestanden (manuell durch asudau) |
+| Tutor (`test_tutor`) in AVS-100 | Eintrag sichtbar, Plan mit denselben Zahlen wie im Integrationstest, z. B. Di 8 Uhr 4 (67 %), Mi 12 Uhr 3 (50 %) ohne genannte Veranstaltungen | bestanden (manuell durch asudau) |
+| Nicht eingetragene Person (`test_tutor` in AVS-000) | Veranstaltung taucht nicht auf; direkt aufgerufene URLs der Plugin-Seite und der Teilnehmerseite liefern „Zugriff verweigert“ | bestanden (automatisiert und manuell durch asudau) |
 
 5 Nicht getestet und bekannte Grenzen
 -------------------------------------
@@ -145,11 +171,13 @@ jetzt einmal.
   und sollten den Plan sehen.
 * **Studiengruppen** sind nicht getestet. Laut Code wird dort weder der Eintrag angezeigt noch die
   Seite ausgeliefert.
-* **Verschobene Einzeltermine eines Turnus:** Gezählt wird die Uhrzeit des Turnus, nicht die einzeln
-  geänderte Uhrzeit eines Termins. Das war im alten Plugin genauso.
-* **Unbegrenzte Veranstaltungen** zählen nur in Semestern, in denen tatsächlich Termine liegen. Eine
-  unbegrenzte Veranstaltung ohne erzeugte Termine erscheint nicht.
-* **Einzeltermine über Mitternacht** werden am ersten Tag um 24 Uhr abgeschnitten (laut Code, nicht getestet).
+* **Status `user` in einer anderen Veranstaltung** ist nicht eigens getestet. Laut Code ist eine
+  Teilnehmende dort genauso belegt wie mit jedem anderen Status (siehe Tutorin in 2.2).
+* **Verschobene Einzeltermine eines Turnus:** Für die Belegung zählt die Uhrzeit des Turnus, nicht die
+  einzeln geänderte Uhrzeit eines Termins. Das war im alten Plugin genauso.
+* **Unbegrenzte Veranstaltungen** belegen nur in Semestern, in denen sie tatsächlich Termine haben.
+* **Einzeltermine über Mitternacht** belegen am ersten Tag bis 24 Uhr, der Folgetag bleibt frei (laut
+  Code, nicht getestet).
 * **Performance** bei großen Veranstaltungen (mehrere hundert Teilnehmende) ist nicht gemessen. Die
   Daten werden mit 3 bis 4 gebündelten Abfragen geladen.
 * **ZIP-Installation** über Admin → System → Plugins ist nicht getestet, nur die Symlink-Installation.
