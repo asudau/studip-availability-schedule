@@ -57,6 +57,28 @@ final class SlotGrid
         return $counts;
     }
 
+    /**
+     * Course counts of a slot split for display: courses with at least $minCount persons are
+     * listed individually, smaller ones are only counted, so that no course can be linked to
+     * a single person.
+     *
+     * @return array{named: array<string, int>, hidden: int} named: course id => persons,
+     *                                                       hidden: number of smaller courses
+     */
+    public function visibleCourseCounts(int $weekday, int $hour, int $minCount): array
+    {
+        $named = [];
+        $hidden = 0;
+        foreach ($this->courseCounts($weekday, $hour) as $courseId => $count) {
+            if ($count >= $minCount) {
+                $named[$courseId] = $count;
+            } else {
+                $hidden++;
+            }
+        }
+        return ['named' => $named, 'hidden' => $hidden];
+    }
+
     public function maxCount(): int
     {
         $max = 0;

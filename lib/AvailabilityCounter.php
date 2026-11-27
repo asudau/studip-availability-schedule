@@ -19,6 +19,9 @@ class AvailabilityCounter
     /** The plan is only available with more than this many participants. */
     public const MIN_PARTICIPANTS = 5;
 
+    /** Other courses are only named in the list if at least this many participants attend them. */
+    public const MIN_COURSE_COUNT = 3;
+
     private ?array $participantIds = null;
     private ?array $memberships = null;
     private ?array $courses = null;

@@ -1,6 +1,9 @@
 pluginclassname=AvailSchedule
 pluginname=AvailabilitySchedule
 origin=elan-ev
-version=0.3
-studipMinVersion=5.0
-studipMaxVersion=5.0.99
+version=1.0.0
+studipMinVersion=6.0
+studipMaxVersion=6.1.99
+description=Zeigt Lehrenden, wie viele Teilnehmende ihrer Veranstaltung zu welchen Zeiten durch andere Veranstaltungen belegt sind.
+displayname=Verfügbarkeitsplan
+category=Kommunikation und Zusammenarbeit

@@ -80,6 +80,23 @@ final class SlotGridTest extends TestCase
         $this->assertSame(['c1' => 1], $grid->courseCounts(self::MON, 10));
     }
 
+    public function testVisibleCourseCountsHideSmallCourses(): void
+    {
+        $grid = new SlotGrid();
+        foreach (['u1', 'u2', 'u3'] as $user) {
+            $grid->addOccupation($user, 'big', self::MON, $this->t('10:00'), $this->t('11:00'));
+        }
+        $grid->addOccupation('u4', 'small1', self::MON, $this->t('10:00'), $this->t('11:00'));
+        $grid->addOccupation('u4', 'small2', self::MON, $this->t('10:00'), $this->t('11:00'));
+        $grid->addOccupation('u5', 'small2', self::MON, $this->t('10:00'), $this->t('11:00'));
+
+        $this->assertSame(
+            ['named' => ['big' => 3], 'hidden' => 2],
+            $grid->visibleCourseCounts(self::MON, 10, 3)
+        );
+        $this->assertSame(['named' => [], 'hidden' => 0], $grid->visibleCourseCounts(self::MON, 11, 3));
+    }
+
     public function testWeekdaysAreSeparate(): void
     {
         $grid = new SlotGrid();
