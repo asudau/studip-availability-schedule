@@ -1,0 +1,72 @@
+/* Availability grid: cells are tinted by --avail-load (0..1, relative to the busiest slot). */
+table.avail-schedule {
+    table-layout: fixed;
+}
+
+table.avail-schedule thead th:first-child,
+table.avail-schedule tbody th {
+    width: 9em;
+    white-space: nowrap;
+}
+
+table.avail-schedule tbody td {
+    background-color: color-mix(
+        in srgb,
+        var(--base-color, #28497c) calc(var(--avail-load, 0) * 45%),
+        var(--white, #fff)
+    );
+    text-align: center;
+}
+
+/* keep text readable on dark cells: black instead of the default link color */
+table.avail-schedule tbody td a {
+    color: var(--black, #000);
+    display: block;
+    font-weight: bold;
+}
+
+table.avail-schedule tbody td a:hover,
+table.avail-schedule tbody td a:focus {
+    text-decoration: underline;
+}
+
+table.avail-schedule .avail-percent {
+    font-weight: normal;
+}
+
+table.avail-schedule .avail-free {
+    color: var(--dark-gray-color-60, #7e7e7e);
+}
+
+.avail-legend {
+    align-items: center;
+    display: flex;
+    gap: 0.5em;
+    margin: 0.5em 0 1.5em;
+}
+
+.avail-legend-scale {
+    background: linear-gradient(
+        to right,
+        var(--white, #fff),
+        color-mix(in srgb, var(--base-color, #28497c) 45%, var(--white, #fff))
+    );
+    border: 1px solid var(--dark-gray-color-20, #ccc);
+    display: inline-block;
+    height: 1em;
+    width: 10em;
+}
+
+dl.avail-schedule-list dt {
+    font-weight: bold;
+    margin-top: 0.75em;
+    scroll-margin-top: 4em;
+}
+
+dl.avail-schedule-list dt:target {
+    background-color: var(--yellow-20, #fff5cc);
+}
+
+dl.avail-schedule-list dd ul {
+    margin: 0.25em 0 0;
+}

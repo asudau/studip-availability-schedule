@@ -67,6 +67,14 @@
     </tbody>
 </table>
 
+<? if ($max > 0): ?>
+    <p class="avail-legend">
+        <span><?= _('frei') ?></span>
+        <span class="avail-legend-scale" aria-hidden="true"></span>
+        <span><?= sprintf(_('%u belegt (Maximum)'), $max) ?></span>
+    </p>
+<? endif ?>
+
 <? if ($max === 0): ?>
     <?= MessageBox::info(_('Die Teilnehmenden haben in diesem Semester keine anderen Termine.')) ?>
 <? else: ?>

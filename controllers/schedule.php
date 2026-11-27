@@ -22,6 +22,9 @@ class ScheduleController extends PluginController
         }
 
         PageLayout::setTitle(Context::getHeaderLine() . ' - ' . _('Verfügbarkeitsplan'));
+        PageLayout::addStylesheet(
+            $this->plugin->getPluginURL() . '/assets/avail-schedule.css?v=' . $this->plugin->getPluginVersion()
+        );
         Navigation::activateItem('/course/members/availability');
     }
 
