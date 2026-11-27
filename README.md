@@ -9,7 +9,7 @@ für eine Zusatzsitzung, eine Klausur oder eine Exkursion.
 Voraussetzungen
 ---------------
 
-* Stud.IP 6.0 bis 6.1 (entwickelt und getestet mit 6.1.2)
+* Stud.IP 6.0 bis 6.1 (entwickelt mit 6.1.2, getestet mit 6.1.2 und 6.1.4)
 * Keine weiteren Abhängigkeiten. Die frühere Abhängigkeit von der Osnabrücker `lib/raumplan`
   besteht nicht mehr.
 
@@ -59,7 +59,7 @@ php public/plugins_packages/elan-ev/AvailSchedule/dev/dump-plan.php AVS-000 --si
 dev/build-zip.sh
 ```
 
-`dev/` und `tests/` sind nicht Teil des Pakets (siehe `.gitattributes`).
+`dev/` und `tests/` sind nicht Teil des Pakets (siehe `.gitattributes`). Welche Fälle getestet sind, steht im [Testprotokoll](TESTPROTOKOLL.md).
 
 Geschichte
 ----------

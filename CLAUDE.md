@@ -16,7 +16,7 @@ required.** Its functionality is re-implemented here on top of core models.
 
 ## Goals and constraints
 
-- Target **Stud.IP 6.x** (developed against 6.1.2). Only core APIs, no Osnabrück-specific
+- Target **Stud.IP 6.x** (developed against 6.1.2, tested on 6.1.4). Only core APIs, no Osnabrück-specific
   dependencies.
 - **Privacy**: show only aggregated numbers (count of distinct participants per slot), never
   names or per-person data. Keep the minimum-participants rule: the plan is only available when
@@ -55,7 +55,7 @@ Deliberately changed (decided 2026-11-27):
 
 ## Stud.IP core reference
 
-The Stud.IP source is at `/home/asudau/projects/studip` (branch `studip-6.1.2`); see its
+The Stud.IP source is at `/home/asudau/projects/studip` (branch `studip-6.1.4`); see its
 `CLAUDE.md`. **Look up models and APIs there instead of guessing.** Relevant pieces:
 
 - Plugin base: `lib/plugins/core/StudIPPlugin.php`, `SystemPlugin.php`,
@@ -78,6 +78,8 @@ The Stud.IP source is at `/home/asudau/projects/studip` (branch `studip-6.1.2`);
 - Test data: `php public/plugins_packages/elan-ev/AvailSchedule/dev/seed-testdata.php`
   (run from the Stud.IP root; `--clean` removes it). Creates courses `AVS-000…008` in the
   current semester; `AVS-000` is the target course with all 15 test students.
+- Edge cases: `php public/plugins_packages/elan-ev/AvailSchedule/dev/test-edgecases.php` seeds AVS-100…113
+  with dedicated users `avs_edge_*` and asserts expected counts (PASS/FAIL). Keep TESTPROTOKOLL.md in sync.
 - `dev/` and `tests/` are not part of the release ZIP.
 - Don't register/enable the plugin while `AvailSchedule.class.php` still requires `lib/raumplan`:
   as a SystemPlugin it loads on every page and would fatal the whole instance.
