@@ -35,7 +35,7 @@ Zusammenfassung
 | SQL-Gegenprobe Hauptdaten | stimmt überein |
 | Browser als Lehrende | bestanden |
 | Browser als Autor | bestanden (manuell durch asudau) |
-| Browser als Tutor | **offen** (siehe unten) |
+| Browser als Tutor | bestanden (manuell durch asudau) |
 | PHPStan Level 0, PHP-Lint, Stylelint | keine Fehler |
 
 1 Unit-Tests
@@ -135,14 +135,12 @@ jetzt einmal.
 | Lehrende, Veranstaltung ohne eigene Rechte | „Zugriff verweigert“ | bestanden |
 | Farbskala | Stylesheet geladen, Abstufung weiß → dunkel nach Auslastung, schwarze Schrift (Kontrast ca. 9:1) | bestanden (per DOM geprüft, Screenshot nicht möglich) |
 | Autor (Studierende) | kein Eintrag „Verfügbarkeit“, kein Zugriff | bestanden (manuell durch asudau) |
-| Tutor (`test_tutor`) in AVS-100 | Eintrag sichtbar, Plan wird angezeigt | **offen**: Der erste Login von `test_tutor` verlangt die Zustimmung zu den Nutzungsbedingungen. Die wurde nicht stellvertretend erteilt. |
-| Nicht eingeschriebene Person (`test_tutor` in AVS-000) | „Zugriff verweigert“ | bestanden |
+| Tutor (`test_tutor`) in AVS-100 | Eintrag sichtbar, Plan wird angezeigt, Zahlen wie im Integrationstest (z. B. Di 8 Uhr 4 (67 %), Mi 12 Uhr 3 (50 %) ohne Veranstaltungsnamen) | bestanden (manuell durch asudau) |
+| Nicht eingeschriebene Person (`test_tutor` in AVS-000) | Veranstaltung taucht nicht auf; direkt aufgerufene URLs der Plugin-Seite und der Teilnehmerseite liefern „Zugriff verweigert“ | bestanden (automatisiert und manuell durch asudau) |
 
 5 Nicht getestet und bekannte Grenzen
 -------------------------------------
 
-* **Tutor-Zugriff im Browser** ist offen (siehe oben). Die Rechteprüfung ist dieselbe wie für Lehrende
-  (`have_studip_perm('tutor', …)`).
 * **Admin und Root** sind nicht getestet. Sie haben in Stud.IP Tutor-Rechte in allen Veranstaltungen
   und sollten den Plan sehen.
 * **Studiengruppen** sind nicht getestet. Laut Code wird dort weder der Eintrag angezeigt noch die
